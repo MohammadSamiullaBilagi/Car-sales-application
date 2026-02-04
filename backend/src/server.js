@@ -2,11 +2,14 @@ import express from 'express'
 import path from 'path'
 
 import { env } from './config/env.js'
+import { connectDB } from './config/db.js'
+import { clerkMiddleware } from '@clerk/express'
 
 const app = express()
 
 const __dirname = path.resolve()
 
+app.use(clerkMiddleware()); 
 
 app.get('/api/health', (req, res) => {
     res.status(200).json({ message: 'SUCCESS' })
@@ -18,5 +21,6 @@ app.get('/api/health', (req, res) => {
 app.use(express.static(path.join(__dirname, 'public')))
 
 app.listen(env.PORT, () => {
-    console.log(`Server is running on ${env.NODE_ENV} mode`)
+    console.log(`Server is running on ${env.NODE_ENV} mode`);
+    connectDB();
 })
