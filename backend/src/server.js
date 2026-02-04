@@ -24,3 +24,12 @@ app.listen(env.PORT, () => {
     console.log(`Server is running on ${env.NODE_ENV} mode`);
     connectDB();
 })
+
+const startServer = async () => {
+    await connectDB();
+    app.listen(env.PORT, () => {
+        console.log(`Server is running on ${env.NODE_ENV} mode`);
+    });
+};
+
+startServer();
