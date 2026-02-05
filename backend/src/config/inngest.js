@@ -1,5 +1,4 @@
 import { Inngest } from "inngest";
-import { serve } from "inngest/express"; // ADD THIS IMPORT
 import { connectDB } from "./db.js";
 import { User } from "../models/user.model.js";
 
@@ -14,7 +13,7 @@ const syncUser = inngest.createFunction(
     
     const newUser = {
       clerkId: id,
-      email: email_addresses[0]?.email_address, // Fixed typo
+      email: email_addresses[0]?.email_address, // Fixed typo: was email_addresses
       name: `${first_name || ""} ${last_name || ""}`.trim() || "User",
       imageUrl: image_url,
       addresses: [],
@@ -31,14 +30,8 @@ const deleteUserFromDB = inngest.createFunction(
   async ({ event }) => {
     await connectDB();
     const { id } = event.data;
-    await User.deleteOne({ clerkId: id }); // Fixed: was "Id" should be "id"
+    await User.deleteOne({ clerkId: id }); // Fixed: was "Id" (uppercase)
   }
 );
 
 export const functions = [syncUser, deleteUserFromDB];
-
-// ADD THIS: Export the serve handler
-export const inngestServe = serve({
-  client: inngest,
-  functions: functions,
-});

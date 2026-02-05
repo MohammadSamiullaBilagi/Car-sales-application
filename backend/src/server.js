@@ -1,37 +1,32 @@
-import { Inngest } from "inngest";
-import { connectDB } from "./db.js";
-import { User } from "../models/user.model.js";
+import express from 'express'
+import path from 'path'
 
-export const inngest = new Inngest({ id: "marvel63cars" });
+import { env } from './config/env.js'
+import { connectDB } from './config/db.js'
+import { clerkMiddleware } from '@clerk/express'
+import { serve } from "inngest/express";
+import { functions, inngest } from "./config/inngest.js";
 
-const syncUser = inngest.createFunction(
-  { id: "sync-user" },
-  { event: "clerk/user.created" },
-  async ({ event }) => {
+const app = express()
+
+const __dirname = path.resolve()
+
+app.use(express.json());
+app.use(clerkMiddleware()); 
+app.use("/api/inngest", serve({ client: inngest, functions }));
+
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ message: 'SUCCESS' })
+})
+
+app.use(express.static(path.join(__dirname, 'public')))
+
+// Remove the duplicate server start - you're calling it twice!
+const startServer = async () => {
     await connectDB();
-    const { id, email_addresses, first_name, last_name, image_url } = event.data;
-    
-    const newUser = {
-      clerkId: id,
-      email: email_addresses[0]?.email_address, // Fixed typo: was email_addresses
-      name: `${first_name || ""} ${last_name || ""}`.trim() || "User",
-      imageUrl: image_url,
-      addresses: [],
-      wishlist: [], 
-    };
+    app.listen(env.PORT, () => {
+        console.log(`Server is running on ${env.NODE_ENV} mode on port ${env.PORT}`);
+    });
+};
 
-    await User.create(newUser);
-  }
-);
-
-const deleteUserFromDB = inngest.createFunction(
-  { id: "delete-user-from-db" },
-  { event: "clerk/user.deleted" },
-  async ({ event }) => {
-    await connectDB();
-    const { id } = event.data;
-    await User.deleteOne({ clerkId: id }); // Fixed: was "Id" (uppercase)
-  }
-);
-
-export const functions = [syncUser, deleteUserFromDB];
+startServer();
